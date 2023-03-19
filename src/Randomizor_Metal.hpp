@@ -16,8 +16,6 @@ namespace Randomizor
     {
     public:
         
-        using NS::StringEncoding::UTF8StringEncoding;
-        
         static constexpr auto Managed = MTL::ResourceStorageModeManaged;
         
         // Each thread will handle these many floats at the same time.
@@ -36,10 +34,10 @@ namespace Randomizor
             NS::Integer threads_per_threadgroup_ = 1024, // for M1
             size_t      OMP_thread_count_ = 8            // for M1 Max; only performance cores
         )
-        :   device                  ( device_                  )
-        ,   threads_per_device      ( threads_per_device_      )
+        :   threads_per_device      ( threads_per_device_      )
         ,   threads_per_threadgroup ( threads_per_threadgroup_ )
         ,   OMP_thread_count        ( OMP_thread_count_        )
+        ,   device                  ( device_                  )
         {
             command_queue = NS::TransferPtr(device->newCommandQueue());
             
@@ -113,7 +111,7 @@ namespace Randomizor
             
             full_code << code;
             
-            NS::SharedPtr<NS::String> code_NS_String = NS::TransferPtr( NS::String::string(full_code.str().c_str(), UTF8StringEncoding) );
+            NS::SharedPtr<NS::String> code_NS_String = NS::TransferPtr( NS::String::string(full_code.str().c_str(), NS::StringEncoding::UTF8StringEncoding) );
             
             NS::Error * error = nullptr;
             
