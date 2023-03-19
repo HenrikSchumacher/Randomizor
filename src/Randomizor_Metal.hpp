@@ -28,14 +28,18 @@ namespace Randomizor
         
         const NS::Integer threads_per_threadgroup;
         
+        const size_t OMP_thread_count = 1;
+        
         explicit Randomizor_Metal(
             NS::SharedPtr<MTL::Device> & device_,
-            NS::Integer threads_per_device_ = 24576*4,  // for M1 Max with 32 cores.
-            NS::Integer threads_per_threadgroup_ = 1024 // for M1
+            NS::Integer threads_per_device_ = 24576*4,   // for M1 Max with 32 cores.
+            NS::Integer threads_per_threadgroup_ = 1024, // for M1
+            size_t      OMP_thread_count_ = 8            // for M1 Max; only performance cores
         )
         :   device                  ( device_                  )
         ,   threads_per_device      ( threads_per_device_      )
         ,   threads_per_threadgroup ( threads_per_threadgroup_ )
+        ,   OMP_thread_count        ( OMP_thread_count_        )
         {
             command_queue = NS::TransferPtr(device->newCommandQueue());
             
@@ -65,8 +69,6 @@ namespace Randomizor
         size_t reservoir_size = 0;
         
         NS::SharedPtr<MTL::Buffer> states;
-        
-        size_t OMP_thread_count = 8;
         
     protected:
         

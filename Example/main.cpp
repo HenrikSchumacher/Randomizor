@@ -30,7 +30,7 @@ int main(int argc, const char * argv[])
         reinterpret_cast<MTL::Device *>( MTL::CopyAllDevices()->object(0) )
     );
     
-    Randomizor::Randomizor_Metal_Xoshiro gen_Xoshiro ( device, 24576 * 4, 1024/2/2 );
+    Randomizor::Randomizor_Metal_Xoshiro gen_Xoshiro ( device, 24576 * 4, 1024/2/2, 8 );
     gen_Xoshiro.RequirePipeline();
     gen_Xoshiro.RequireSeed();
     
@@ -40,8 +40,7 @@ int main(int argc, const char * argv[])
     
     float * restrict b = gen_Xoshiro.Reservoir();
 
-    
-    Randomizor::Randomizor_Metal_PCG gen_PCG ( device, 24576 * 4, 1024/2/2 );
+    Randomizor::Randomizor_Metal_PCG gen_PCG ( device, 24576 * 4, 1024/2/2, 8 );
     gen_PCG.RequirePipeline();
     gen_PCG.RequireSeed();
     gen_PCG.LoadReservoir( b, n );
@@ -201,7 +200,7 @@ int main(int argc, const char * argv[])
 //    dump(b[1]);
 //    dump(b[2]);
 //    dump(b[3]);
-//    
+//
 //    dump(b[n-4]);
 //    dump(b[n-3]);
 //    dump(b[n-2]);
