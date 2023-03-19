@@ -39,6 +39,8 @@
 		AF1CC9F829C76C53004608C8 /* Metal.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = Metal.framework; path = System/Library/Frameworks/Metal.framework; sourceTree = SDKROOT; };
 		AF1CC9FA29C77212004608C8 /* Example.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Example.entitlements; sourceTree = "<group>"; };
 		AF1CC9FB29C7756D004608C8 /* Randomizor_Metal_PCG.hpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.h; path = Randomizor_Metal_PCG.hpp; sourceTree = "<group>"; };
+		AF1CC9FC29C77F0F004608C8 /* Tools */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Tools; sourceTree = "<group>"; };
+		AF1CC9FE29C77F0F004608C8 /* metal-cpp */ = {isa = PBXFileReference; lastKnownFileType = folder; path = "metal-cpp"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +60,8 @@
 		AF1CC9CF29C762A3004608C8 = {
 			isa = PBXGroup;
 			children = (
+				AF1CC9FE29C77F0F004608C8 /* metal-cpp */,
+				AF1CC9FC29C77F0F004608C8 /* Tools */,
 				AF1CC9E529C762F6004608C8 /* LICENSE */,
 				AF1CC9E629C7652E004608C8 /* Randomizor_CPU.hpp */,
 				AF1CC9E729C7654C004608C8 /* Randomizor_Metal_Xoshiro.hpp */,
@@ -212,11 +216,22 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = (
+					/opt/homebrew/lib,
+					/opt/homebrew/opt/openblas/lib,
+					/opt/homebrew/opt/libomp/lib,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					/opt/homebrew/opt/openblas/include,
+					/opt/homebrew/include,
+					/opt/homebrew/opt/libomp/include,
+					"metal-cpp",
+				);
 			};
 			name = Debug;
 		};
@@ -264,10 +279,21 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
+				LIBRARY_SEARCH_PATHS = (
+					/opt/homebrew/lib,
+					/opt/homebrew/opt/openblas/lib,
+					/opt/homebrew/opt/libomp/lib,
+				);
 				MACOSX_DEPLOYMENT_TARGET = 13.1;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = macosx;
+				SYSTEM_HEADER_SEARCH_PATHS = (
+					/opt/homebrew/opt/openblas/include,
+					/opt/homebrew/include,
+					/opt/homebrew/opt/libomp/include,
+					"metal-cpp",
+				);
 			};
 			name = Release;
 		};
@@ -280,11 +306,6 @@
 				DEVELOPMENT_TEAM = "";
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y6DQ749ZRT;
 				ENABLE_HARDENED_RUNTIME = YES;
-				LIBRARY_SEARCH_PATHS = (
-					/opt/homebrew/lib,
-					/opt/homebrew/opt/openblas/lib,
-					/opt/homebrew/opt/libomp/lib,
-				);
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -304,12 +325,6 @@
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SYSTEM_HEADER_SEARCH_PATHS = (
-					/opt/homebrew/opt/openblas/include,
-					/opt/homebrew/include,
-					/opt/homebrew/opt/libomp/include,
-					"metal-cpp",
-				);
 			};
 			name = Debug;
 		};
@@ -323,11 +338,6 @@
 				"DEVELOPMENT_TEAM[sdk=macosx*]" = Y6DQ749ZRT;
 				ENABLE_HARDENED_RUNTIME = YES;
 				GCC_OPTIMIZATION_LEVEL = fast;
-				LIBRARY_SEARCH_PATHS = (
-					/opt/homebrew/lib,
-					/opt/homebrew/opt/openblas/lib,
-					/opt/homebrew/opt/libomp/lib,
-				);
 				ONLY_ACTIVE_ARCH = YES;
 				OTHER_CPLUSPLUSFLAGS = (
 					"$(OTHER_CFLAGS)",
@@ -347,12 +357,6 @@
 				);
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
-				SYSTEM_HEADER_SEARCH_PATHS = (
-					/opt/homebrew/opt/openblas/include,
-					/opt/homebrew/include,
-					/opt/homebrew/opt/libomp/include,
-					"metal-cpp",
-				);
 			};
 			name = Release;
 		};
