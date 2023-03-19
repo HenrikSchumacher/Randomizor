@@ -169,28 +169,33 @@ int main(int argc, const char * argv[])
     toc("Xoshiro (normal, rejection, int)");
 
     
+    tic(gen_Xoshiro.ClassName()+"Fill_Normal");
     gen_Xoshiro.Fill_Normal();
-    
-//    dump(b[0]);
-//    dump(b[1]);
-//    dump(b[2]);
-//    dump(b[3]);
-//
-//    dump(b[n-4]);
-//    dump(b[n-3]);
-//    dump(b[n-2]);
-//    dump(b[n-1]);
-
+    toc(gen_Xoshiro.ClassName()+"Fill_Normal");
+    tic(gen_Xoshiro.ClassName()+"Fill_Normal");
     gen_Xoshiro.Fill_Normal();
+    toc(gen_Xoshiro.ClassName()+"Fill_Normal");
     
+    tic(gen_PCG.ClassName()+"Fill_Normal");
     gen_PCG.Fill_Normal();
+    toc(gen_PCG.ClassName()+"Fill_Normal");
+    tic(gen_PCG.ClassName()+"Fill_Normal");
     gen_PCG.Fill_Normal();
-   
-    gen_Xoshiro.Fill_Uniform();
-    gen_Xoshiro.Fill_Uniform();
+    toc(gen_PCG.ClassName()+"Fill_Normal");
     
+    tic(gen_Xoshiro.ClassName()+"Fill_Uniform");
+    gen_Xoshiro.Fill_Uniform();
+    toc(gen_Xoshiro.ClassName()+"Fill_Uniform");
+    tic(gen_Xoshiro.ClassName()+"Fill_Uniform");
+    gen_Xoshiro.Fill_Uniform();
+    toc(gen_Xoshiro.ClassName()+"Fill_Uniform");
+    
+    tic(gen_PCG.ClassName()+"Fill_Uniform");
     gen_PCG.Fill_Uniform();
+    toc(gen_PCG.ClassName()+"Fill_Uniform");
+    tic(gen_Xoshiro.ClassName()+"Fill_Uniform");
     gen_PCG.Fill_Uniform();
+    toc(gen_PCG.ClassName()+"Fill_Uniform");
     
 //    dump(b[0]);
 //    dump(b[1]);

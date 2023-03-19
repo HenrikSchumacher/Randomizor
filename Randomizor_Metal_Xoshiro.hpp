@@ -48,7 +48,7 @@ namespace Randomizor
         
         virtual void Seed() override
         {
-            tic(ClassName()+"::Seed");
+            ptic(ClassName()+"::Seed");
             
             states = NS::TransferPtr(
                  device->newBuffer( threads_per_device * 4 * sizeof(uint64_t), Managed )
@@ -102,7 +102,7 @@ namespace Randomizor
             
             states->didModifyRange({0,states->length()});
             
-            toc(ClassName()+"::Seed");
+            ptoc(ClassName()+"::Seed");
         }
         
         void Compile() override
@@ -128,16 +128,16 @@ namespace Randomizor
         
         virtual void Fill_Uniform() override
         {
-            tic(ClassName()+"::Fill_Uniform");
+            ptic(ClassName()+"::Fill_Uniform");
             RandomizeReservoir("Xoshiro256Plus_UniformDistribution");
-            toc(ClassName()+"::Fill_Uniform");
+            ptoc(ClassName()+"::Fill_Uniform");
         }
         
         virtual void Fill_Normal() override
         {
-            tic(ClassName()+"::Fill_Normal");
+            ptic(ClassName()+"::Fill_Normal");
             RandomizeReservoir("Xoshiro256Plus_NormalDistribution");
-            toc(ClassName()+"::Fill_Normal");
+            ptoc(ClassName()+"::Fill_Normal");
         }
         
     public:
