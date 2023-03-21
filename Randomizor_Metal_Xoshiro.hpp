@@ -11,8 +11,6 @@ namespace Randomizor
     {
     public:
         
-        using NS::StringEncoding::UTF8StringEncoding;
-        
         using UInt        = typename Xoshiro256Plus::UInt;
         using state_type  = typename Xoshiro256Plus::state_type;
         using result_type = float;
@@ -108,6 +106,22 @@ namespace Randomizor
         
         void Compile() override
         {
+//            LoadPipeline(
+//                "Xoshiro256Plus_UniformDistribution",
+//                std::string(
+//                    "/Users/Henrik/github/Randomizor/src/Randomizor_Metal_Xoshiro/Xoshiro256Plus_UniformDistribution.metallib"
+//                ),
+//                {},{},{}
+//            );
+//
+//            LoadPipeline(
+//                "Xoshiro256Plus_NormalDistribution",
+//                std::string(
+//                    "/Users/Henrik/github/Randomizor/src/Randomizor_Metal_Xoshiro/Xoshiro256Plus_NormalDistribution.metallib"
+//                ),
+//                {},{},{}
+//            );
+            
             CompilePipeline(
                 "Xoshiro256Plus_UniformDistribution",
                 std::string(
@@ -115,7 +129,7 @@ namespace Randomizor
                 ),
                 {},{},{}
             );
-            
+
             CompilePipeline(
                 "Xoshiro256Plus_NormalDistribution",
                 std::string(

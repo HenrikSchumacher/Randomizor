@@ -11,8 +11,6 @@ namespace Randomizor
     {
     public:
         
-        using NS::StringEncoding::UTF8StringEncoding;
-        
         using UInt        = typename Xoshiro256Plus::UInt;
         using state_type  = typename Xoshiro256Plus::state_type;
         using result_type = float;

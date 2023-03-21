@@ -7,6 +7,8 @@
 #include "../Tools/Tools.hpp"
 #include "Helpers.hpp"
 
+//TODO: Offline compilation https://developer.apple.com/videos/play/wwdc2022/10102/?time=168
+
 namespace Randomizor
 {
     using namespace Tools;
@@ -70,6 +72,77 @@ namespace Randomizor
         
     protected:
         
+        void LoadPipeline(
+            const std::string & fun_name,                 // name of function in code string
+            const std::string & file,                     // string of actual Metal code
+            const std::vector<std::string> & param_types, // types of compile-time parameters (converted to string)
+            const std::vector<std::string> & param_names, // name of compile-time parameters
+            const std::vector<std::string> & param_vals   // values of compile-time parameters
+        )
+        {
+            std::string fun_fullname = FullPipelineName(fun_name,param_vals);
+            
+            std::string tag = ClassName()+"::LoadPipeline(" + fun_fullname + ")";
+            
+            ptic(tag);
+            
+            NS::SharedPtr<NS::String> file_NS_String = NS::TransferPtr( NS::String::string(file.c_str(), NS::StringEncoding::UTF8StringEncoding) );
+            
+            NS::Error * error = nullptr;
+            
+            
+            NS::SharedPtr<MTL::Library> lib = NS::TransferPtr(
+                device->newLibrary(
+                    file_NS_String.get(),
+                    &error
+                )
+            );
+            
+            if( lib.get() == nullptr )
+            {
+                eprint(tag+": Failed to compile library from string for function.");
+                valprint("Error message", error->description()->utf8String() );
+                std::exit(-1);
+            }
+            
+            bool found = false;
+            
+            // Go through all functions in the library to find ours.
+            for( NS::UInteger i = 0; i < lib->functionNames()->count(); ++i )
+            {
+                auto name_nsstring = lib->functionNames()->object(i)->description();
+                
+                if( fun_name == name_nsstring->utf8String() )
+                {
+                    found = true;
+                    
+                    
+                    // This MTL::Function object is needed only temporarily.
+                    NS::SharedPtr<MTL::Function> fun = NS::TransferPtr(lib->newFunction(name_nsstring));
+                    
+                    // Create pipeline from function.
+                    pipelines[fun_fullname] = NS::TransferPtr(device->newComputePipelineState(fun.get(), &error));
+                    
+                    if( pipelines[fun_fullname].get() == nullptr )
+                    {
+                        eprint(tag+": Failed to created pipeline state object.");
+                        valprint("Error message", error->description()->utf8String() );
+                        std::exit(-1);
+                    }
+                }
+            }
+            
+            if( found )
+            {
+                ptoc(tag);
+            }
+            else
+            {
+                eprint(tag+": Metal kernel not found in source code.");
+                ptoc(tag);
+                std::exit(-1);
+            }
+        }
         
         void CompilePipeline(
             const std::string & fun_name,                 // name of function in code string
@@ -115,10 +188,18 @@ namespace Randomizor
             
             NS::Error * error = nullptr;
             
+            NS::SharedPtr<MTL::CompileOptions> opts;
+            
+            opts->init();
+            opts->setOptimizationLevel(
+//                MTL::LibraryOptimizationLevelDefault
+                MTL::LibraryOptimizationLevelSize
+            );
+            
             NS::SharedPtr<MTL::Library> lib = NS::TransferPtr(
                 device->newLibrary(
                     code_NS_String.get(),
-                    nullptr, // <-- for distinguishing from the function that loads from file
+                    opts.get(), // <-- for distinguishing from the function that loads from file
                     &error
                 )
             );
@@ -226,7 +307,7 @@ namespace Randomizor
         
     public:
         
-        NS::Integer ReservoirSize( const size_t n )
+        size_t ReservoirSize( const size_t n )
         {
             
             const size_t samples_per_thread = SampleChunkSize() * (n + threads_per_device - 1) / (SampleChunkSize() * threads_per_device);
@@ -254,7 +335,7 @@ namespace Randomizor
         
         void LoadReservoir( float * external_reservoir, const size_t external_size )
         {
-            NS::Integer internal_size = ReservoirSize(external_size);
+            size_t internal_size = ReservoirSize(external_size);
             
             if( internal_size == external_size )
             {

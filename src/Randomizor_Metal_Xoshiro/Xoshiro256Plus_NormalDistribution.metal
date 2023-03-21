@@ -1,12 +1,7 @@
 R"(
 // FIXME: For non-jit compilation (e.g. for debugging)
 // FIXME: we have run the following command in the terminal:
-// FIXME: xcrun -sdk macosx metal -c <<filename>>.metal -o <<filename>>.air && xcrun -sdk macosx metallib <<filename>>.air -o <<filename>>.metallib
-
-// FIXME: Comment-out the following line for run-time compilation:
-
-// FIXME: We use "block_size" as "template parameters" for jit-compilation.
-// FIXME: Comment-in the following two lines for run-time compilation:
+// FIXME: xcrun -sdk macosx metal -c Xoshiro256Plus_NormalDistribution.metal -o Xoshiro256Plus_NormalDistribution.air && xcrun -sdk macosx metallib Xoshiro256Plus_NormalDistribution.air -o Xoshiro256Plus_NormalDistribution.metallib
 
 #include <metal_stdlib>
 

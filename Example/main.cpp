@@ -20,17 +20,22 @@ using namespace Tools;
 
 int main(int argc, const char * argv[])
 {
-    const size_t thread_count = 8;
+    const size_t GPU_thread_count = 24576 * 4;
+    const size_t threadgroup_size = 1024/2/2;
+    const size_t OMP_thread_count = 8;
     
-//    const size_t n_ = size_t(1024) * size_t(1024) * size_t(1024);
     const size_t n_ = size_t(1024) * size_t(1024) * size_t(1024);
+    
+//    const size_t n_ = 100663296;
     
     
     NS::SharedPtr<MTL::Device> device = NS::TransferPtr(
         reinterpret_cast<MTL::Device *>( MTL::CopyAllDevices()->object(0) )
     );
     
-    Randomizor::Randomizor_Metal_Xoshiro gen_Xoshiro ( device, 24576 * 4, 1024/2/2, 8 );
+    Randomizor::Randomizor_Metal_Xoshiro gen_Xoshiro (
+        device, GPU_thread_count, threadgroup_size, OMP_thread_count
+    );
     gen_Xoshiro.RequirePipeline();
     gen_Xoshiro.RequireSeed();
     
@@ -38,16 +43,20 @@ int main(int argc, const char * argv[])
     
     const size_t n = gen_Xoshiro.ReservoirSize();
     
+    dump(n);
+    
     float * restrict b = gen_Xoshiro.Reservoir();
 
-    Randomizor::Randomizor_Metal_PCG gen_PCG ( device, 24576 * 4, 1024/2/2, 8 );
-    gen_PCG.RequirePipeline();
-    gen_PCG.RequireSeed();
-    gen_PCG.LoadReservoir( b, n );
+//    Randomizor::Randomizor_Metal_PCG gen_PCG (
+//        device, GPU_thread_count, threadgroup_size, OMP_thread_count
+//    );
+//    gen_PCG.RequirePipeline();
+//    gen_PCG.RequireSeed();
+//    gen_PCG.LoadReservoir( b, n );
     
 //    tic("BNNS (uniform)");
-//    #pragma omp parallel for num_threads(thread_count)
-//    for( size_t thread = 0; thread < thread_count; ++thread )
+//    #pragma omp parallel for num_threads(OMP_thread_count)
+//    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
 //    {
 //        BNNSNDArrayDescriptor desc;
 //        desc.layout     = BNNSDataLayoutVector;
@@ -66,8 +75,8 @@ int main(int argc, const char * argv[])
 //    toc("BNNS (uniform)");
 //
 //    tic("BNNS (normal)");
-//    #pragma omp parallel for num_threads(thread_count)
-//    for( size_t thread = 0; thread < thread_count; ++thread )
+//    #pragma omp parallel for num_threads(OMP_thread_count)
+//    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
 //    {
 //        BNNSNDArrayDescriptor desc;
 //        desc.layout     = BNNSDataLayoutVector;
@@ -86,9 +95,9 @@ int main(int argc, const char * argv[])
 //    toc("BNNS (normal)");
 
     std::random_device r;
-    std::vector<std::uint64_t> seeds ( thread_count);
+    std::vector<std::uint64_t> seeds ( OMP_thread_count);
 
-    for( size_t i = 0; i < thread_count; ++i )
+    for( size_t i = 0; i < OMP_thread_count; ++i )
     {
         reinterpret_cast<std::uint32_t*>(&seeds[i])[0] = r();
         reinterpret_cast<std::uint32_t*>(&seeds[i])[1] = r();
@@ -97,16 +106,16 @@ int main(int argc, const char * argv[])
 
 
     tic("STL (unif)");
-    #pragma omp parallel for num_threads(thread_count)
-    for( size_t thread = 0; thread < thread_count; ++thread )
+    #pragma omp parallel for num_threads(OMP_thread_count)
+    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
     {
         // Create the actual random engine.
         std::mt19937_64 random_engine ( seeds[thread] );
 
         std::uniform_real_distribution<float> dist (0,1);
 
-        const size_t i_begin = JobPointer<size_t>(n,thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,thread_count,thread+1);
+        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
+        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
 
         for( size_t i = i_begin; i < i_end; ++i )
         {
@@ -116,16 +125,16 @@ int main(int argc, const char * argv[])
     toc("STL (unif)");
 
     tic("STL (normal)");
-    #pragma omp parallel for num_threads(thread_count)
-    for( size_t thread = 0; thread < thread_count; ++thread )
+    #pragma omp parallel for num_threads(OMP_thread_count)
+    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
     {
         // Create the actual random engine.
         std::mt19937_64 random_engine ( seeds[thread] );
 
         std::normal_distribution<float> dist (0,1);
 
-        const size_t i_begin = JobPointer<size_t>(n,thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,thread_count,thread+1);
+        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
+        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
 
         for( size_t i = i_begin; i < i_end; ++i )
         {
@@ -136,14 +145,14 @@ int main(int argc, const char * argv[])
     
     
     tic("Xoshiro (normal, rejection, int)");
-    #pragma omp parallel for num_threads(thread_count)
-    for( size_t thread = 0; thread < thread_count; ++thread )
+    #pragma omp parallel for num_threads(OMP_thread_count)
+    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
     {
         // Create the actual random engine.
         Randomizor::Xoshiro256Plus random_engine ( seeds[thread] );
         
-        const size_t i_begin = JobPointer<size_t>(n,thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,thread_count,thread+1);
+        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
+        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
         
         if( i_end > i_begin )
         {
@@ -175,12 +184,12 @@ int main(int argc, const char * argv[])
     gen_Xoshiro.Fill_Normal();
     toc(gen_Xoshiro.ClassName()+"Fill_Normal");
     
-    tic(gen_PCG.ClassName()+"Fill_Normal");
-    gen_PCG.Fill_Normal();
-    toc(gen_PCG.ClassName()+"Fill_Normal");
-    tic(gen_PCG.ClassName()+"Fill_Normal");
-    gen_PCG.Fill_Normal();
-    toc(gen_PCG.ClassName()+"Fill_Normal");
+//    tic(gen_PCG.ClassName()+"Fill_Normal");
+//    gen_PCG.Fill_Normal();
+//    toc(gen_PCG.ClassName()+"Fill_Normal");
+//    tic(gen_PCG.ClassName()+"Fill_Normal");
+//    gen_PCG.Fill_Normal();
+//    toc(gen_PCG.ClassName()+"Fill_Normal");
     
     tic(gen_Xoshiro.ClassName()+"Fill_Uniform");
     gen_Xoshiro.Fill_Uniform();
@@ -189,12 +198,13 @@ int main(int argc, const char * argv[])
     gen_Xoshiro.Fill_Uniform();
     toc(gen_Xoshiro.ClassName()+"Fill_Uniform");
     
-    tic(gen_PCG.ClassName()+"Fill_Uniform");
-    gen_PCG.Fill_Uniform();
-    toc(gen_PCG.ClassName()+"Fill_Uniform");
-    tic(gen_Xoshiro.ClassName()+"Fill_Uniform");
-    gen_PCG.Fill_Uniform();
-    toc(gen_PCG.ClassName()+"Fill_Uniform");
+//    tic(gen_PCG.ClassName()+"Fill_Uniform");
+//    gen_PCG.Fill_Uniform();
+//    toc(gen_PCG.ClassName()+"Fill_Uniform");
+//    tic(gen_PCG.ClassName()+"Fill_Uniform");
+//    gen_PCG.Fill_Uniform();
+//    toc(gen_PCG.ClassName()+"Fill_Uniform");
+
     
 //    dump(b[0]);
 //    dump(b[1]);
