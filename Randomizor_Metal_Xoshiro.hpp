@@ -5,6 +5,10 @@
 #include "src/SplitMix64.hpp"
 #include "src/Xoshiro256Plus.hpp"
 
+// TODO: Use bit-fiddling to convert to doubles, so that GPU can write directly to the buffer.
+
+// TODO: Get rid of accessively long first launch times.
+
 namespace Randomizor
 {
     class Randomizor_Metal_Xoshiro : public Randomizor_Metal

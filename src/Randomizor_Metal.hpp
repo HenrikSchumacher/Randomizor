@@ -427,6 +427,11 @@ namespace Randomizor
             MTL::Size th_per_tg (threads_per_threadgroup,1,1);
             MTL::Size tg_per_gr (threads_per_device / threads_per_threadgroup,1,1);
             
+            if( static_cast<size_t>(threads_per_threadgroup) != static_cast<size_t>(th_per_tg.width) )
+            {
+                wprint(ClassName()+"::RandomizeReservoir: Threadgroup size was limited by the hardware to "+ToString(th_per_tg.width)+".");
+            }
+            
             // Encode the compute command.
             compute_encoder->dispatchThreadgroups(tg_per_gr,th_per_tg);
             
