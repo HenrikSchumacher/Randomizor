@@ -24,9 +24,9 @@ namespace Randomizor
             NS::SharedPtr<MTL::Device> & device_,
             NS::Integer threads_per_device_ = 24576*4,   // for M1 Max with 32 cores.
             NS::Integer threads_per_threadgroup_ = 1024, // for M1
-            size_t      OMP_thread_count_ = 8            // for M1 Max; only performance cores
+            size_t      CPU_thread_count_ = 8            // for M1 Max; only performance cores
         )
-        :   Randomizor_Metal( device_, threads_per_device_, threads_per_threadgroup_, OMP_thread_count_ )
+        :   Randomizor_Metal( device_, threads_per_device_, threads_per_threadgroup_, CPU_thread_count_ )
         {}
         
         ~Randomizor_Metal_Xoshiro() = default;
@@ -40,7 +40,7 @@ namespace Randomizor
         using Randomizor_Metal::reservoir;
         using Randomizor_Metal::reservoir_size;
         using Randomizor_Metal::states;
-        using Randomizor_Metal::OMP_thread_count;
+        using Randomizor_Metal::CPU_thread_count;
         
     protected:
         
@@ -73,35 +73,38 @@ namespace Randomizor
             // Create the actual random engine.
             Xoshiro256Plus seeder ( seed );
             
-            std::vector<state_type> seeder_states ( OMP_thread_count);
+            std::vector<state_type> seeder_states ( CPU_thread_count);
             
-            for( size_t i = 0; i < OMP_thread_count; ++i )
+            for( size_t i = 0; i < CPU_thread_count; ++i )
             {
                 seeder.LongJump();
                 seeder_states[i] = seeder.State();
             }
             
-            #pragma omp parallel for num_threads(OMP_thread_count)
-            for( size_t thread = 0; thread < OMP_thread_count; ++thread )
-            {
-                // Create the actual random engine.
-                Xoshiro256Plus random_engine ( seeder_states[thread] );
-                
-                std::array<uint64_t,4> s;
-                
-                const size_t i_begin = JobPointer<size_t>(threads_per_device,OMP_thread_count,thread  );
-                const size_t i_end   = JobPointer<size_t>(threads_per_device,OMP_thread_count,thread+1);
-                
-                for( size_t i = i_begin; i < i_end; ++i )
+            
+            ParallelDo(
+                [&]( const size_t thread )
                 {
-                    random_engine.Jump();
-                    s = random_engine.State();
-                    states_ptr[4*i+0] = s[0];
-                    states_ptr[4*i+1] = s[1];
-                    states_ptr[4*i+2] = s[2];
-                    states_ptr[4*i+3] = s[3];
-                }
-            }
+                    // Create the actual random engine.
+                    Xoshiro256Plus random_engine ( seeder_states[thread] );
+                    
+                    std::array<uint64_t,4> s;
+                    
+                    const size_t i_begin = JobPointer(threads_per_device,CPU_thread_count,thread  );
+                    const size_t i_end   = JobPointer(threads_per_device,CPU_thread_count,thread+1);
+                    
+                    for( size_t i = i_begin; i < i_end; ++i )
+                    {
+                        random_engine.Jump();
+                        s = random_engine.State();
+                        states_ptr[4*i+0] = s[0];
+                        states_ptr[4*i+1] = s[1];
+                        states_ptr[4*i+2] = s[2];
+                        states_ptr[4*i+3] = s[3];
+                    }
+                },
+                CPU_thread_count
+            );
             
             states->didModifyRange({0,states->length()});
             

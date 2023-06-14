@@ -33,7 +33,7 @@ using namespace metal;
         
         if( pos < chunks_per_grid )
         {
-            float4 u; // To be filled from uniform distribution on [0,1).
+            thread float4 u; // To be filled from uniform distribution on [0,1).
             
             {
                 // Xoshiro256+ implementation: http://prng.di.unimi.it/xoshiro256plus.c
@@ -83,9 +83,12 @@ using namespace metal;
             s[0] = sincos( 6.283185307179586f * u[1], c[0] );
             s[1] = sincos( 6.283185307179586f * u[3], c[1] );
             
-            const float4 x = { r[0] * c[0], r[0] * s[0], r[1] * c[1], r[1] * s[1] };
+            u[0] = r[0] * c[0];
+            u[1] = r[0] * s[0];
+            u[2] = r[1] * c[1];
+            u[3] = r[1] * s[1];
             
-            a[pos] = x;
+            a[pos] = u;
         }
         
         // We have to update the states in case we want to call this function again.

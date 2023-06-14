@@ -1,6 +1,10 @@
 #define NS_PRIVATE_IMPLEMENTATION
 #define MTL_PRIVATE_IMPLEMENTATION
 
+#define NDEBUG
+
+#define TOOLS_ENABLE_PROFILER // enable profiler
+
 #include <Foundation/Foundation.hpp>
 #include <Metal/Metal.hpp>
 #include <Accelerate/Accelerate.h>
@@ -9,7 +13,6 @@
 #include <random>
 #include <cmath>
 
-#define TOOLS_ENABLE_PROFILER // enable profiler
 
 #include "../Randomizor_Metal_Xoshiro.hpp"
 #include "../Randomizor_Metal_PCG.hpp"
@@ -22,7 +25,7 @@ int main(int argc, const char * argv[])
 {
     const size_t GPU_thread_count = 24576 * 4;
     const size_t threadgroup_size = 1024/2/2;
-    const size_t OMP_thread_count = 8;
+    const size_t CPU_thread_count = 8;
     
     const size_t n_ = size_t(1024) * size_t(1024) * size_t(1024);
     
@@ -34,7 +37,7 @@ int main(int argc, const char * argv[])
     );
     
     Randomizor::Randomizor_Metal_Xoshiro gen_Xoshiro (
-        device, GPU_thread_count, threadgroup_size, OMP_thread_count
+        device, GPU_thread_count, threadgroup_size, CPU_thread_count
     );
     gen_Xoshiro.RequirePipeline();
     gen_Xoshiro.RequireSeed();
@@ -48,15 +51,15 @@ int main(int argc, const char * argv[])
     float * restrict b = gen_Xoshiro.Reservoir();
 
 //    Randomizor::Randomizor_Metal_PCG gen_PCG (
-//        device, GPU_thread_count, threadgroup_size, OMP_thread_count
+//        device, GPU_thread_count, threadgroup_size, CPU_thread_count
 //    );
 //    gen_PCG.RequirePipeline();
 //    gen_PCG.RequireSeed();
 //    gen_PCG.LoadReservoir( b, n );
     
 //    tic("BNNS (uniform)");
-//    #pragma omp parallel for num_threads(OMP_thread_count)
-//    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
+//    #pragma omp parallel for num_threads(CPU_thread_count)
+//    for( size_t thread = 0; thread < CPU_thread_count; ++thread )
 //    {
 //        BNNSNDArrayDescriptor desc;
 //        desc.layout     = BNNSDataLayoutVector;
@@ -75,8 +78,8 @@ int main(int argc, const char * argv[])
 //    toc("BNNS (uniform)");
 //
 //    tic("BNNS (normal)");
-//    #pragma omp parallel for num_threads(OMP_thread_count)
-//    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
+//    #pragma omp parallel for num_threads(CPU_thread_count)
+//    for( size_t thread = 0; thread < CPU_thread_count; ++thread )
 //    {
 //        BNNSNDArrayDescriptor desc;
 //        desc.layout     = BNNSDataLayoutVector;
@@ -95,9 +98,9 @@ int main(int argc, const char * argv[])
 //    toc("BNNS (normal)");
 
     std::random_device r;
-    std::vector<std::uint64_t> seeds ( OMP_thread_count);
+    std::vector<std::uint64_t> seeds ( CPU_thread_count);
 
-    for( size_t i = 0; i < OMP_thread_count; ++i )
+    for( size_t i = 0; i < CPU_thread_count; ++i )
     {
         reinterpret_cast<std::uint32_t*>(&seeds[i])[0] = r();
         reinterpret_cast<std::uint32_t*>(&seeds[i])[1] = r();
@@ -106,74 +109,81 @@ int main(int argc, const char * argv[])
 
 
     tic("STL (unif)");
-    #pragma omp parallel for num_threads(OMP_thread_count)
-    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
-    {
-        // Create the actual random engine.
-        std::mt19937_64 random_engine ( seeds[thread] );
-
-        std::uniform_real_distribution<float> dist (0,1);
-
-        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
-
-        for( size_t i = i_begin; i < i_end; ++i )
+    ParallelDo(
+        [&,b]( const size_t thread )
         {
-            b[i] = dist( random_engine );
-        }
-    }
+            // Create the actual random engine.
+            std::mt19937_64 random_engine ( seeds[thread] );
+
+            std::uniform_real_distribution<float> dist (0,1);
+
+            const size_t i_begin = JobPointer(n,CPU_thread_count,thread  );
+            const size_t i_end   = JobPointer(n,CPU_thread_count,thread+1);
+
+            for( size_t i = i_begin; i < i_end; ++i )
+            {
+                b[i] = dist( random_engine );
+            }
+        },
+        CPU_thread_count
+    );
+    
     toc("STL (unif)");
 
     tic("STL (normal)");
-    #pragma omp parallel for num_threads(OMP_thread_count)
-    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
-    {
-        // Create the actual random engine.
-        std::mt19937_64 random_engine ( seeds[thread] );
-
-        std::normal_distribution<float> dist (0,1);
-
-        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
-
-        for( size_t i = i_begin; i < i_end; ++i )
+    ParallelDo(
+        [&,b]( const size_t thread )
         {
-            b[i] = dist( random_engine );
-        }
-    }
+            // Create the actual random engine.
+            std::mt19937_64 random_engine ( seeds[thread] );
+
+            std::normal_distribution<float> dist (0,1);
+
+            const size_t i_begin = JobPointer<size_t>(n,CPU_thread_count,thread  );
+            const size_t i_end   = JobPointer<size_t>(n,CPU_thread_count,thread+1);
+
+            for( size_t i = i_begin; i < i_end; ++i )
+            {
+                b[i] = dist( random_engine );
+            }
+        },
+        CPU_thread_count
+    );
     toc("STL (normal)");
     
     
     tic("Xoshiro (normal, rejection, int)");
-    #pragma omp parallel for num_threads(OMP_thread_count)
-    for( size_t thread = 0; thread < OMP_thread_count; ++thread )
-    {
-        // Create the actual random engine.
-        Randomizor::Xoshiro256Plus random_engine ( seeds[thread] );
-        
-        const size_t i_begin = JobPointer<size_t>(n,OMP_thread_count,thread  );
-        const size_t i_end   = JobPointer<size_t>(n,OMP_thread_count,thread+1);
-        
-        if( i_end > i_begin )
+    ParallelDo(
+        [&,b]( const size_t thread )
         {
-            const size_t i_begin_odd = i_begin % 2;
-            const size_t i_end_odd   = i_end   % 2;
-            
-            float x;
-            float y;
-            
-            getNormalFloatPair( random_engine, x, y );
-            
-            b[i_begin] = x;
-            
-            for( size_t i = i_begin + i_begin_odd; i < i_end - i_end_odd; i+=2 )
+            // Create the actual random engine.
+            Randomizor::Xoshiro256Plus random_engine ( seeds[thread] );
+
+            const size_t i_begin = JobPointer<size_t>(n,CPU_thread_count,thread  );
+            const size_t i_end   = JobPointer<size_t>(n,CPU_thread_count,thread+1);
+
+            if( i_end > i_begin )
             {
-                getNormalFloatPair( random_engine, b[i+0], b[i+1] );
+                const size_t i_begin_odd = i_begin % 2;
+                const size_t i_end_odd   = i_end   % 2;
+
+                float x;
+                float y;
+
+                getNormalFloatPair( random_engine, x, y );
+
+                b[i_begin] = x;
+
+                for( size_t i = i_begin + i_begin_odd; i < i_end - i_end_odd; i+=2 )
+                {
+                    getNormalFloatPair( random_engine, b[i+0], b[i+1] );
+                }
+
+                b[i_end-1] = y;
             }
-            
-            b[i_end-1] = y;
-        }
-    }
+        },
+        CPU_thread_count
+    );
     toc("Xoshiro (normal, rejection, int)");
 
     
